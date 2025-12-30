@@ -1,1 +1,6 @@
-print("hello")
+def init():
+  print("prompt")
+
+
+
+init()
