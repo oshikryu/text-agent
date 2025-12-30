@@ -113,6 +113,26 @@ def is_field_valid(key, val):
       if day < 1 or day > 31:
         return False
       return True
+    case "gender":
+      # Accept common gender values (case insensitive)
+      valid_genders = ["male", "female", "other", "prefer not to say"]
+      return val.lower().strip() in valid_genders
+    case "reason_for_visit":
+      # Required field, must have some content
+      return val.strip() != ""
+    case "allergies" | "medications":
+      # Accept "none" or any non-empty value
+      return val.strip() != ""
+    case "address":
+      # Basic address validation - must be non-empty
+      # TODO: Add more complex address validation
+      return val.strip() != ""
+    case "payer_name":
+      # Insurance payer name is required
+      return val.strip() != ""
+    case "insurance_id":
+      # Optional field - always valid
+      return True
     case _:
       # Default validation for other fields
       return val != ""
@@ -147,7 +167,11 @@ def mapped_prompt_display(key):
 def extract_value_from_llm_output(wrapper, field, value):
   match field:
     case "dob":
-      prompt = f"Format dob based on 01012002 (MMDDYYYY format)"
+      prompt = """
+          Does the format include month, date and year? Return invalid if not.
+
+          Format date of birth based on (MMDDYYYY format)
+      """
       res = wrapper.query(prompt, value)
       # Parse the async response to extract the actual content
       llm_response = res.output_text
@@ -182,7 +206,7 @@ def init():
         # Validation loop: keep asking until valid input is provided
         while True:
           answer = prompt(mapped_prompt_display(field))
-          # optionally call llm here for processing DOB
+
           normalized_value = normalize_user_input(wrapper, field, answer)
           extracted_value = extract_value_from_llm_output(wrapper, field, answer)
           is_valid = is_field_valid(field, extracted_value)
@@ -197,7 +221,6 @@ def init():
             break
           else:
             print(normalized_value)
-            # call address validation here
 
 
     # call the appointment request service
