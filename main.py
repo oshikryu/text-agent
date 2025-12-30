@@ -38,9 +38,56 @@ appointment_request = dict(
   schedule_status=SCHEDULE_STATUS.get('requested')
 )
 
-# TODO: generate mock data for providers
+# AI Generated mock data
 providers_list = [
-
+  {
+    "provider_id": 101,
+    "first_name": "Sarah",
+    "last_name": "Johnson",
+    "specialty": "Family Medicine",
+    "available_days": ["Monday", "Tuesday", "Wednesday", "Friday"],
+    "years_experience": 12
+  },
+  {
+    "provider_id": 102,
+    "first_name": "Michael",
+    "last_name": "Chen",
+    "specialty": "Internal Medicine",
+    "available_days": ["Tuesday", "Wednesday", "Thursday", "Friday"],
+    "years_experience": 8
+  },
+  {
+    "provider_id": 103,
+    "first_name": "Emily",
+    "last_name": "Rodriguez",
+    "specialty": "Pediatrics",
+    "available_days": ["Monday", "Wednesday", "Thursday", "Friday"],
+    "years_experience": 15
+  },
+  {
+    "provider_id": 104,
+    "first_name": "David",
+    "last_name": "Williams",
+    "specialty": "Cardiology",
+    "available_days": ["Monday", "Tuesday", "Thursday"],
+    "years_experience": 20
+  },
+  {
+    "provider_id": 105,
+    "first_name": "Jennifer",
+    "last_name": "Patel",
+    "specialty": "Dermatology",
+    "available_days": ["Tuesday", "Wednesday", "Friday"],
+    "years_experience": 10
+  },
+  {
+    "provider_id": 106,
+    "first_name": "Robert",
+    "last_name": "Martinez",
+    "specialty": "Orthopedics",
+    "available_days": ["Monday", "Wednesday", "Thursday"],
+    "years_experience": 18
+  }
 ]
 
 # TODO: maybe make the user response a dict where we have key -> value
@@ -201,6 +248,8 @@ class FieldValidators():
   def get_address_validation(self, address): 
     # TODO: re-prompt address validation?
     res =  self.gmaps_client.addressvalidation([address])
+    print(res)
+    import ipdb; ipdb.set_trace()
 
     return res.get('responseId', None)
 
@@ -280,6 +329,16 @@ class AppointmentRequestService():
     appointment_request['patient_id'] = patient_info.get('patient_id')
     appointment_request['schedule_status'] = SCHEDULE_STATUS.get('requested')
 
+    # TODO: remove this
+    # Print appointment request summary
+    print("\n=== Appointment Request Created ===")
+    print(f"Patient: {patient_info.get('first_name')} {patient_info.get('last_name')}")
+    print(f"Patient ID: {patient_info.get('patient_id')}")
+    print(f"DOB: {patient_info.get('dob')}")
+    print(f"Reason for Visit: {appointment_request.get('reason_for_visit')}")
+    print(f"Status: {appointment_request.get('schedule_status')}")
+    print("===================================\n")
+
     # TODO: Persist to database
     # TODO: Send confirmation to patient
 
@@ -293,6 +352,13 @@ class AppointmentRequestService():
     """
     appointment_request['schedule_status'] = SCHEDULE_STATUS.get('confirmed')
 
+    # Print confirmation
+    print("\n=== Appointment Confirmed ===")
+    print(f"Patient ID: {appointment_request.get('patient_id')}")
+    print(f"Provider ID: {appointment_request.get('provider_id')}")
+    print(f"Status: {appointment_request.get('schedule_status')}")
+    print("============================\n")
+
     # TODO: Update in database
     # TODO: Send confirmation notification
 
@@ -305,6 +371,13 @@ class AppointmentRequestService():
     Updates schedule_status to cancelled
     """
     appointment_request['schedule_status'] = SCHEDULE_STATUS.get('cancelled')
+
+    # Print cancellation
+    print("\n=== Appointment Cancelled ===")
+    print(f"Patient ID: {appointment_request.get('patient_id')}")
+    print(f"Provider ID: {appointment_request.get('provider_id')}")
+    print(f"Status: {appointment_request.get('schedule_status')}")
+    print("=============================\n")
 
     # TODO: Update in database
     # TODO: Send cancellation notification

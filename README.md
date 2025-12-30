@@ -81,6 +81,8 @@ Provider
 - specialty
 - schedule blocks (Day of week, times as integer representations?) 
 
+provider_schedule
+
 
 
 # Future todo:
