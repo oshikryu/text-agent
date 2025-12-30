@@ -5,7 +5,10 @@
 Part I
 - user prompt
 - validation of input
+- LLM integration here?
 - store in dict/model
+
+- determine if we can go to the next step
 -
 - Patient info
 - Insurance info

@@ -17,6 +17,11 @@ poetry install
 
 ```
 source venv/bin/activate
-poetry run main.py
 
+```
+
+Create a .env file with your OPENAI_API_KEY
+
+```
+poetry run python3 main.py
 ```
