@@ -1,4 +1,5 @@
 import os
+import googlemaps
 from openai import OpenAI
 from prompt_toolkit import prompt
 from dotenv import load_dotenv
@@ -73,7 +74,7 @@ CLI_STEPS = [
 ]
 
 """
-map keys to a CLI friendly displat text
+map keys to a CLI friendly display text
 """
 display_map = {
   "first_name": "First Name",
@@ -87,56 +88,6 @@ display_map = {
   "payer_name": "Insurance Payer Name",
   "insurance_id": "Insurance ID (Optional)",
 }
-
-"""
-
-Return boolean
-"""
-def is_field_valid(key, val):
-  match key:
-    case "first_name" | "last_name":
-      # TODO:
-      # basic validation like trimming white text, valid characters for storage
-      # edge cases like taking into account Jr. other non alphanumeric
-      return val != ""
-    case "dob":
-      # check for normalized dob e.g. 01012002 (MMDDYYYY format)
-      if len(val) != 8:
-        return False
-      if not val.isdigit():
-        return False
-      # Basic range validation for month and day
-      month = int(val[0:2])
-      day = int(val[2:4])
-      if month < 1 or month > 12:
-        return False
-      if day < 1 or day > 31:
-        return False
-      return True
-    case "gender":
-      # Accept common gender values (case insensitive)
-      valid_genders = ["male", "female", "other", "prefer not to say"]
-      return val.lower().strip() in valid_genders
-    case "reason_for_visit":
-      # Required field, must have some content
-      return val.strip() != ""
-    case "allergies" | "medications":
-      # Accept "none" or any non-empty value
-      return val.strip() != ""
-    case "address":
-      # Basic address validation - must be non-empty
-      # TODO: Add more complex address validation
-      return val.strip() != ""
-    case "payer_name":
-      # Insurance payer name is required
-      return val.strip() != ""
-    case "insurance_id":
-      # Optional field - always valid
-      return True
-    case _:
-      # Default validation for other fields
-      return val != ""
-
 
 
 """
@@ -176,6 +127,14 @@ def extract_value_from_llm_output(wrapper, field, value):
       # Parse the async response to extract the actual content
       llm_response = res.output_text
       return llm_response
+    case "address":
+      prompt = f"""
+      The provided address you gave was not found: {value}
+      Provide a response to prompt the user for another address
+      """
+      res = wrapper.query(prompt, value)
+      llm_response = res.output_text
+      return llm_response
     case _:
       return value
 
@@ -193,8 +152,8 @@ def normalize_user_input(wrapper, field, value):
 
 def init():
   if __name__ == '__main__':
-    # initialize openai client
     wrapper = LLMWrapper()
+    fieldValidators = FieldValidators()
 
     for idx, step in enumerate(CLI_STEPS):
       data_structure = step.get('data_structure')
@@ -209,7 +168,7 @@ def init():
 
           normalized_value = normalize_user_input(wrapper, field, answer)
           extracted_value = extract_value_from_llm_output(wrapper, field, answer)
-          is_valid = is_field_valid(field, extracted_value)
+          is_valid = fieldValidators.is_field_valid(field, extracted_value)
 
           if is_valid:
             # Save the valid answer and move to next field
@@ -229,12 +188,69 @@ def init():
 
     # wait for provider confirmation
 
+class FieldValidators():
+  # TODO: add try/catch for gmaps client key
+  def __init__(self):
+    load_dotenv()
+    GMAPS_KEY = os.getenv('GMAPS_KEY')
+    self.gmaps_client = googlemaps.Client(
+        key=GMAPS_KEY,
+    )
+
+  def get_address_validation(self, address): 
+    # TODO: re-prompt address validation?
+    return self.gmaps_client.addressvalidation([address])
+
+  def is_field_valid(self, key, val):
+    match key:
+      case "first_name" | "last_name":
+        # TODO:
+        # basic validation like trimming white text, valid characters for storage
+        # edge cases like taking into account Jr. other non alphanumeric
+        return val != ""
+      case "dob":
+        # check for normalized dob e.g. 01012002 (MMDDYYYY format)
+        if len(val) != 8:
+          return False
+        if not val.isdigit():
+          return False
+        # Basic range validation for month and day
+        month = int(val[0:2])
+        day = int(val[2:4])
+        if month < 1 or month > 12:
+          return False
+        if day < 1 or day > 31:
+          return False
+        return True
+      case "gender":
+        # Accept common gender values (case insensitive)
+        valid_genders = ["male", "female", "other", "prefer not to say"]
+        return val.lower().strip() in valid_genders
+      case "reason_for_visit":
+        # Required field, must have some content
+        return val.strip() != ""
+      case "allergies" | "medications":
+        # Accept "none" or any non-empty value
+        return val.strip() != ""
+      case "address":
+        return self.get_address_validation(val)
+      case "payer_name":
+        # Insurance payer name is required
+        return val.strip() != ""
+      case "insurance_id":
+        # Optional field - always valid
+        return True
+      case _:
+        # Default validation for other fields
+        return val != ""
+
+
+
 class LLMWrapper():
   def __init__(self):
     load_dotenv()
     OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
     self.client = OpenAI(
-        # This is the default and can be omitted
         api_key=OPENAI_API_KEY,
     )
 
@@ -314,8 +330,5 @@ class ProviderMatchingService():
 
   def get_all_provider_schedules():
     pass
-
-
-
 
 init()

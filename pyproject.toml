@@ -12,6 +12,7 @@ openai = "^2.3.0"
 prompt-toolkit = "^3.0.52"
 python-dotenv = "^1.2.1"
 ipdb = "^0.13.13"
+googlemaps = "^4.10.0"
 
 [build-system]
 requires = ["poetry-core"]
