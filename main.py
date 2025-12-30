@@ -142,6 +142,7 @@ def normalize_user_input(wrapper, field, value):
   match field:
     case "dob":
       # TODO: need to sanitize the field before passing to openai input
+      # skip LLM call if the input is already a good "known" input
       prompt = f"Get my date of birth based on the following input"
       res = wrapper.query(prompt, value)
       llm_response = res.output_text
@@ -182,11 +183,11 @@ def init():
             print(normalized_value)
 
 
-    # call the appointment request service
-    # return the appointment request
+    # TODO: call ProviderMatchingService()
+
     return AppointmentRequestService.create_appointment(patient_info, appointment_request)
 
-    # wait for provider confirmation
+    # TODO: follow up for provider confirmation
 
 class FieldValidators():
   # TODO: add try/catch for gmaps client key
@@ -199,7 +200,9 @@ class FieldValidators():
 
   def get_address_validation(self, address): 
     # TODO: re-prompt address validation?
-    return self.gmaps_client.addressvalidation([address])
+    res =  self.gmaps_client.addressvalidation([address])
+
+    return res.get('responseId', None)
 
   def is_field_valid(self, key, val):
     match key:
