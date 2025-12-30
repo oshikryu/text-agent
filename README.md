@@ -88,3 +88,6 @@ provider_schedule
 # Future todo:
 - allow  back/forth in the conversation steps (stack pop, etc)
 - tests
+- Separate out scheduling service as a task to be done in parallel
+- address validation may require more tuning
+- add try/catch for the service using valid API keys

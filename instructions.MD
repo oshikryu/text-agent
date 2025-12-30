@@ -20,7 +20,9 @@ source venv/bin/activate
 
 ```
 
-Create a .env file with your OPENAI_API_KEY
+Create a .env file with the following api keys:
+`OPENAI_API_KEY`
+`GMAPS_KEY`
 
 ```
 poetry run python3 main.py
