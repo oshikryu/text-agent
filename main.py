@@ -1,6 +1,6 @@
 import os
 import googlemaps
-from openai import OpenAI
+from anthropic import Anthropic, APIError, APIConnectionError, APITimeoutError, RateLimitError, AuthenticationError
 from prompt_toolkit import prompt
 from dotenv import load_dotenv
 
@@ -171,6 +171,9 @@ def extract_value_from_llm_output(wrapper, field, value):
           Format date of birth based on (MMDDYYYY format)
       """
       res = wrapper.query(prompt, value)
+      if res is None:
+        # Fallback: return original value if LLM call fails
+        return value
       # Parse the async response to extract the actual content
       llm_response = res.output_text
       return llm_response
@@ -180,6 +183,9 @@ def extract_value_from_llm_output(wrapper, field, value):
       Provide a response to prompt the user for another address
       """
       res = wrapper.query(prompt, value)
+      if res is None:
+        # Fallback: return original value if LLM call fails
+        return value
       llm_response = res.output_text
       return llm_response
     case _:
@@ -192,6 +198,9 @@ def normalize_user_input(wrapper, field, value):
       # skip LLM call if the input is already a good "known" input
       prompt = f"Get my date of birth based on the following input"
       res = wrapper.query(prompt, value)
+      if res is None:
+        # Fallback: return original value if LLM call fails
+        return value
       llm_response = res.output_text
       return llm_response
     case _:
@@ -299,23 +308,64 @@ class FieldValidators():
 
 
 class LLMWrapper():
-  def __init__(self):
+  def __init__(self, model="claude-sonnet-4-5-20250929", max_tokens=1024):
     load_dotenv()
-    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-    self.client = OpenAI(
-        api_key=OPENAI_API_KEY,
+    ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
+    self.client = Anthropic(
+        api_key=ANTHROPIC_API_KEY,
     )
+    self.model = model
+    self.max_tokens = max_tokens
 
   def query(self, instructions, input):
+      """
+      Query Claude with system instructions and user input.
+
+      Args:
+          instructions: System-level instructions for the model
+          input: User input/prompt
+
+      Returns:
+          Response object with output_text attribute for backward compatibility
+      """
       try:
-          return self.client.responses.create(
-            # TODO: make this model configurable
-            model="gpt-4o",
-            instructions=instructions,
-            input=input,
+          message = self.client.messages.create(
+              model=self.model,
+              max_tokens=self.max_tokens,
+              system=instructions,
+              messages=[
+                  {
+                      "role": "user",
+                      "content": input
+                  }
+              ]
           )
+
+          # Create wrapper for backward compatibility
+          class ResponseWrapper:
+              def __init__(self, message):
+                  self.output_text = message.content[0].text
+                  self._raw_message = message
+
+          return ResponseWrapper(message)
+
+      except AuthenticationError as e:
+          print(f"Authentication failed. Please check your ANTHROPIC_API_KEY: {e}")
+          return None
+      except RateLimitError as e:
+          print(f"Rate limit exceeded. Please try again later: {e}")
+          return None
+      except APITimeoutError as e:
+          print(f"Request timed out. Please check your connection: {e}")
+          return None
+      except APIConnectionError as e:
+          print(f"Connection error. Please check your internet connection: {e}")
+          return None
+      except APIError as e:
+          print(f"Anthropic API error: {e}")
+          return None
       except Exception as e:
-          print(f"Error querying LLM: {e}")
+          print(f"Unexpected error querying Claude: {e}")
           return None
 
 class AppointmentRequestService():

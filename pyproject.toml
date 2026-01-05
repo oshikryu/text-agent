@@ -8,11 +8,12 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.12,<4.0"
-openai = "^2.3.0"
+# openai = "^2.3.0"  # Removed - migrated to Anthropic
 prompt-toolkit = "^3.0.52"
 python-dotenv = "^1.2.1"
 ipdb = "^0.13.13"
 googlemaps = "^4.10.0"
+anthropic = "^0.75.0"
 
 [build-system]
 requires = ["poetry-core"]
