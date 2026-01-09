@@ -1,5 +1,33 @@
 # CLI Text Agent
 
+## Installation
+
+Pre-requisites: python 3.13+ < 4.x
+poetry
+
+Create Virtual environment
+```
+python3 -m venv venv
+source venv/bin/activate
+pip3 install poetry
+poetry install
+```
+
+## Run
+
+```
+source venv/bin/activate
+
+```
+
+Create a .env file with the following api keys:
+`OPENAI_API_KEY`
+`GMAPS_KEY`
+
+```
+poetry run python3 main.py
+```
+
 ## Project CLI loop
 
 Part I
